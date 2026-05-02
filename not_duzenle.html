@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Not Düzenle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-light bg-white shadow-sm">
+    <div class="container">
+        <span class="navbar-brand mb-0 h5">✏️ Not Düzenle</span>
+    </div>
+</nav>
+
+<div class="container my-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="mb-2 text-muted small">
+                📅 {{ not_bilgisi[1]|format_date }}
+            </div>
+
+            <form method="post">
+                <div class="mb-3">
+                    <textarea name="not_metni"
+                              class="form-control"
+                              rows="6"
+                              required>{{ not_bilgisi[2] }}</textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success w-50">
+                        💾 Kaydet
+                    </button>
+                    <a href="/notlar_liste"
+                       class="btn btn-outline-secondary w-50">
+                        İptal
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

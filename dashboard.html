@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Ders Takibi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0d6efd">
+
+</head>
+<body class="container mt-4">
+<div class="alert alert-info text-center">
+    {{ motivasyon_mesaj }}
+</div>
+<!-- Dashboard'daki butonlar bölümüne ekleyin: -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-2">
+        <a href="/grafikler" class="btn btn-primary w-100">📊 Grafikler</a>
+    </div>
+    <div class="col-md-3 mb-2">
+        <a href="/soru" class="btn btn-warning w-100">📝 Soru Takibi</a>
+    </div>
+    <div class="col-md-3 mb-2">
+        <a href="/zayif_konular" class="btn btn-danger w-100">🚨 Zayıf Konular</a>
+    </div>
+    <div class="col-md-3 mb-2">
+        <a href="/notlar" class="btn btn-secondary">
+    📝 Not Defteri
+</a>
+
+    </div>
+</div>
+<!-- SINAV BİLGİLERİ bölümüne ekleyin: -->
+<div class="card mb-4 p-3 text-center shadow-sm">
+    <h5 class="card-title">🎯 KPSS 2026 Planı</h5>
+
+    <div class="row mt-3">
+        <div class="col-md-3">
+            <p class="mb-1">
+                <i class="bi bi-calendar-check"></i>
+                <strong>Başvuru:</strong> {{ basvuru_tarihi }}
+            </p>
+        </div>
+        <div class="col-md-3">
+            <p class="mb-1">
+                <i class="bi bi-flag"></i>
+                <strong>Konu Bitiş:</strong> {{ hedef_bitis_tarihi }}
+            </p>
+        </div>
+        <div class="col-md-3">
+            <p class="mb-1">
+                <i class="bi bi-graph-up"></i>
+                <strong>Tahmini Bitiş:</strong> {{ tahmini_bitis_tarihi }}
+            </p>
+        </div>
+        <div class="col-md-3">
+            <p class="mb-1">
+                <i class="bi bi-pencil-square"></i>
+                <strong>Sınav:</strong> {{ sinav_tarihi }}
+            </p>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-md-4">
+            <h5 class="text-danger">
+                ⏳ Sınava Kalan: {{ kalan_gun }} gün
+            </h5>
+        </div>
+        <div class="col-md-4">
+            <h5 class="text-warning">
+                📚 Planlanan Bitişe: {{ hedef_kalan_gun }} gün
+            </h5>
+        </div>
+        <div class="col-md-4">
+            <h5 class="text-info">
+                📊 Tahmini Bitişe: {{ tahmini_kalan_gun }} gün
+            </h5>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <small class="text-muted">
+    📅 Konu anlatımı 4 aylık plan: 120 gün ({{ toplam_calisilacak_gun }} gün)
+    | 🏃 Genel ortalama tempo: {{ "%.2f"|format(genel_ortalama_tempo) if genel_ortalama_tempo else "Hesaplanıyor..." }} sayfa/gün
+    <br><span class="text-info">(Başlangıçtan bugüne ortalama)</span>
+</small>
+    </div>
+</div>
+
+<div class="card mb-4 p-3 text-center">
+<!-- Ders Çalışma Durumu bölümünü bu şekilde değiştirin: -->
+<h4>📚 Dersler - Tek Tek İlerleme</h4>
+<hr>
+
+{% for ders in dersler %}
+<div class="card mb-3 p-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">{{ ders[0] }}</h5> <!-- Ders adı -->
+        <span class="badge bg-primary">
+            {{ ders[2] }}/{{ ders[1] }} sayfa
+        </span>
+    </div>
+
+    <!-- İlerleme yüzdesi -->
+    {% set yuzde = (ders[2] / ders[1] * 100) if ders[1] > 0 else 0 %}
+    <div class="mb-2">
+        <small>İlerleme: {{ "%.1f"|format(yuzde) }}%</small>
+        <div class="progress" style="height: 20px;">
+            <div class="progress-bar
+                {% if yuzde >= 75 %}bg-success
+                {% elif yuzde >= 40 %}bg-warning
+                {% else %}bg-danger{% endif %}"
+                style="width: {{ yuzde }}%">
+            </div>
+        </div>
+    </div>
+
+    <!-- Kalan sayfa -->
+    <p class="mb-2">
+        <small>
+            📌 Kalan: <strong>{{ ders[1] - ders[2] }}</strong> sayfa
+        </small>
+    </p>
+
+    <!-- SAYFA EKLEME FORMU -->
+    <form method="post" action="/sayfa_ekle" class="row g-2">
+        <input type="hidden" name="ders" value="{{ ders[0] }}">
+
+        <div class="col-8">
+            <input type="number"
+                   name="sayfa"
+                   class="form-control form-control-sm"
+                   placeholder="Çalıştığım sayfa sayısı"
+                   min="1"
+                   max="{{ ders[1] - ders[2] }}"
+                   required>
+        </div>
+
+        <div class="col-4">
+            <button class="btn btn-success btn-sm w-100">Ekle</button>
+        </div>
+    </form>
+</div>
+{% endfor %}
+
+<a href="/grafikler" class="btn btn-primary w-100 mt-3">
+    📊 Grafikler
+</a>
+
+<a href="/soru" class="btn btn-warning w-100 mt-2">
+    📝 Soru Takibi
+</a>
+
+{% if konu_durum == "iyi" %}
+    <span class="badge bg-success">İyi gidiyorsun</span>
+{% elif konu_durum == "orta" %}
+    <span class="badge bg-warning">Dikkat</span>
+{% else %}
+    <span class="badge bg-danger">Riskli</span>
+{% endif %}
+
+<a href="/zayif_konular" class="btn btn-danger w-100 mt-2">
+    🚨 Zayıf Konular
+</a>
+<div class="row mt-4">
+
+<!-- KONU ANLATIMI HEDEFİ -->
+<div class="col-md-6 mb-3">
+    <div class="card p-3 h-100 shadow-sm">
+        <h5 class="card-title">📘 4 Aylık Konu Anlatım Planı</h5>
+        <small class="text-muted">120 günlük çalışma programı</small>
+
+        <!-- İKİ BİTİŞ TARİHİ KARŞILAŞTIRMASI -->
+        <div class="row text-center mt-3">
+            <div class="col-6 mb-3">
+                <div class="p-3 border rounded bg-light">
+                    <small>📅 Planlanan Bitiş</small>
+                    <h5 class="mt-2 text-primary">{{ hedef_bitis_tarihi }}</h5>
+                    <small class="text-muted">
+                        {{ hedef_kalan_gun }} gün kaldı
+                    </small>
+                </div>
+            </div>
+            <div class="col-6 mb-3">
+                <div class="p-3 border rounded
+                    {% if tahmini_bitis_tarihi != 'Hesaplanamadı' and tahmini_bitis_tarihi <= hedef_bitis_tarihi %}
+                        bg-success bg-opacity-10
+                    {% else %}
+                        bg-warning bg-opacity-10
+                    {% endif %}">
+                    <small>📊 Tahmini Bitiş</small>
+                    <h5 class="mt-2
+                        {% if tahmini_bitis_tarihi != 'Hesaplanamadı' and tahmini_bitis_tarihi <= hedef_bitis_tarihi %}
+                            text-success
+                        {% else %}
+                            text-warning
+                        {% endif %}">
+                        {{ tahmini_bitis_tarihi }}
+                    </h5>
+                    <small class="text-muted">
+                        {% if tahmini_kalan_gun > 0 %}
+                            {{ tahmini_kalan_gun }} gün sürer
+                        {% else %}
+                            Hesaplanıyor...
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+
+<!-- ÇALIŞMA TEMPOSU ANALİZİ (GÜNCELLENMİŞ) -->
+<div class="mb-3 p-3 border rounded">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small>🏃 Genel Ortalama Tempo:</small>
+        <span class="badge bg-info">{{ "%.2f"|format(genel_ortalama_tempo) if genel_ortalama_tempo else "0" }} sayfa/gün</span>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small>📊 Son 7 Günlük Tempo:</small>
+        <span class="badge bg-secondary">{{ son_7_gun_ortalama }} sayfa/gün</span>
+    </div>
+    <div class="d-flex justify-content-between align-items-center">
+        <small>🎯 Gereken Tempo:</small>
+        <span class="badge bg-primary">{{ gunluk_sayfa_hedef }} sayfa/gün</span>
+    </div>
+
+    <!-- Tempo Karşılaştırması - Genel Ortalama ile -->
+    <div class="mt-3">
+        <div class="d-flex justify-content-between mb-1">
+            <small>📈 Genel Tempo Oranı:</small>
+            <small>
+                {% if tempo_orani_genel > 0 %}
+                    %{{ tempo_orani_genel }}
+                {% else %}
+                    Hesaplanamadı
+                {% endif %}
+            </small>
+        </div>
+        <div class="progress" style="height: 10px;">
+            <div class="progress-bar
+                {% if tempo_orani_genel >= 100 %}bg-success
+                {% elif tempo_orani_genel >= 80 %}bg-warning
+                {% else %}bg-danger{% endif %}"
+                style="width: {{ tempo_orani_genel if tempo_orani_genel <= 100 else 100 }}%">
+            </div>
+        </div>
+        <small class="text-muted">
+            {% if tempo_orani_genel >= 100 %}
+                ✅ Genel ortalamanız yeterli
+            {% elif tempo_orani_genel >= 80 %}
+                ⚠️ Genel ortalamanız neredeyse yeterli
+            {% elif tempo_orani_genel > 0 %}
+                ❌ Genel ortalamanızı artırmanız gerekiyor
+            {% else %}
+                📊 Henüz yeterli veri yok
+            {% endif %}
+        </small>
+    </div>
+
+    <!-- Son 7 gün karşılaştırması (opsiyonel) -->
+    {% if son_7_gun_ortalama > 0 %}
+    <div class="mt-2 small text-muted border-top pt-2">
+        <div class="d-flex justify-content-between">
+            <span>📊 Son 7 gün:</span>
+            <span class="{% if son_7_gun_ortalama >= genel_ortalama_tempo %}text-success{% else %}text-warning{% endif %}">
+                {{ son_7_gun_ortalama }} sayfa/gün
+                {% if son_7_gun_ortalama >= genel_ortalama_tempo %}
+                    (📈 yükseliş)
+                {% else %}
+                    (📉 düşüş)
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+        <!-- ZAMAN BİLGİLERİ -->
+        <div class="row text-center mb-3">
+            <div class="col-4">
+                <div class="p-2 border rounded">
+                    <small>Geçen Gün</small>
+                    <h6 class="mt-1 text-info">{{ gecen_gun }}</h6>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 border rounded">
+                    <small>Kalan Gün</small>
+                    <h6 class="mt-1 text-warning">{{ hedef_kalan_gun }}</h6>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 border rounded">
+                    <small>Toplam</small>
+                    <h6 class="mt-1">{{ toplam_calisilacak_gun }}</h6>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAYFA BİLGİLERİ -->
+        <div class="row text-center mb-3">
+            <div class="col-6">
+                <div class="p-2 border rounded">
+                    <small>Kalan Sayfa</small>
+                    <h4 class="mt-1 text-danger">{{ kalan_sayfa }}</h4>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-2 border rounded">
+                    <small>Çalışılan</small>
+                    <h4 class="mt-1 text-success">{{ calisilan_sayfa }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- İLERLEME DURUMU -->
+        <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+                <small>
+                    <span class="text-success">Gerçek: %{{ ilerleme_yuzdesi }}</span>
+                </small>
+                <small>
+                    <span class="text-info">Planlanan: %{{ planlanan_ilerleme }}</span>
+                </small>
+            </div>
+            <div class="progress" style="height: 20px;">
+                <!-- Planlanan ilerleme (mavi) -->
+                <div class="progress-bar bg-info"
+                     style="width: {{ planlanan_ilerleme }}%"
+                     title="Planlanan ilerleme: %{{ planlanan_ilerleme }}">
+                </div>
+                <!-- Gerçek ilerleme (yeşil) -->
+                <div class="progress-bar bg-success"
+                     style="width: {{ ilerleme_yuzdesi }}%"
+                     title="Gerçek ilerleme: %{{ ilerleme_yuzdesi }}">
+                </div>
+            </div>
+
+            <!-- İlerleme farkı -->
+            <div class="text-center mt-2">
+                {% if ilerleme_farki > 0 %}
+                    <span class="badge bg-success">
+                        ✅ Planın <strong>{{ ilerleme_farki }}%</strong> önündesiniz
+                    </span>
+                {% elif ilerleme_farki < 0 %}
+                    <span class="badge bg-danger">
+                        ⚠️ Planın <strong>{{ ilerleme_farki|abs }}%</strong> gerisindesiniz
+                    </span>
+                {% else %}
+                    <span class="badge bg-info">
+                        📍 Planla tam uyumlusunuz
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- AÇIK DURUMU -->
+        {% if acik > 0 %}
+        <div class="alert alert-warning p-2 mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <small>📌 Toplam Açık:</small>
+                <span class="fw-bold text-danger">{{ acik }} sayfa</span>
+            </div>
+            <small class="text-muted">
+                {{ hedef_kalan_gun }} günde telafi edilmeli
+            </small>
+        </div>
+        {% else %}
+        <div class="alert alert-success p-2 mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <small>✅ Açık:</small>
+                <span class="fw-bold text-success">0 sayfa</span>
+            </div>
+            <small class="text-muted">Planınızın önündesiniz</small>
+        </div>
+        {% endif %}
+
+        <!-- HEDEF HESAPLAMALARI -->
+        <div class="mt-3">
+            <!-- İdeal Hedef -->
+            <div class="mb-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">İdeal Günlük Hedef:</small>
+                    <span class="badge bg-info">{{ ideal_gunluk_hedef }} sayfa</span>
+                </div>
+                <small class="text-muted">(Açık yoksa)</small>
+            </div>
+
+            <!-- FİNAL HEDEF -->
+            <div class="p-3 bg-primary bg-opacity-10 rounded border border-primary mb-3">
+                <div class="text-center">
+                    <small>🎯 BUGÜN ÇALIŞMANIZ GEREKEN</small>
+                    <h2 class="text-primary mt-1">{{ gunluk_sayfa_hedef }} sayfa</h2>
+                    <small class="text-muted">/ gün (telafi dahil)</small>
+                </div>
+
+                {% if telafi_gerekiyor %}
+                <div class="mt-2 text-center">
+                    <small class="text-danger">
+                        ⚠️ Bu hedef {{ acik }} sayfa telafi içeriyor
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Önerilen Hedef -->
+            <div class="p-2 bg-light rounded">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small>💡 Önerilen Hedef:</small>
+                    <span class="badge bg-success">{{ realist_gunluk_hedef }} sayfa</span>
+                </div>
+                <small class="text-muted">(%10 fazla - güven payı ile)</small>
+            </div>
+        </div>
+
+<!-- SONUÇ MESAJI -->
+<div class="mt-3 p-2
+    {% if gun_farki <= 0 and tahmini_bitis_tarihi != 'Hesaplanamadı' %}
+        bg-success bg-opacity-10 border border-success
+    {% else %}
+        bg-warning bg-opacity-10 border border-warning
+    {% endif %} rounded">
+    <small class="d-block text-center">
+        {% if tahmini_bitis_tarihi != 'Hesaplanamadı' %}
+            {% if gun_farki <= 0 %}
+                🎉 <strong>Mevcut tempoyla planlanan tarihten önce bitirebilirsiniz!</strong>
+                {% if gun_farki < 0 %}
+                    <br><small>({{ gun_farki|abs }} gün erken)</small>
+                {% endif %}
+            {% else %}
+                ⏰ <strong>Mevcut tempoyla planlanan tarihten {{ gun_farki }} gün sonra bitecek.</strong>
+            {% endif %}
+        {% else %}
+            📊 <strong>Henüz yeterli veri yok. Düzenli çalışmaya devam edin.</strong>
+        {% endif %}
+    </small>
+</div>
+
+        <!-- Durum Göstergesi -->
+        <div class="mt-3 text-center">
+            {% if sayfa_durum == "iyi" %}
+                <span class="badge bg-success p-2">
+                    <i class="bi bi-check-circle"></i> İyi Gidiyor
+                </span>
+            {% elif sayfa_durum == "orta" %}
+                <span class="badge bg-warning p-2">
+                    <i class="bi bi-exclamation-triangle"></i> Dikkat
+                </span>
+            {% else %}
+                <span class="badge bg-danger p-2">
+                    <i class="bi bi-x-circle"></i> Riskli
+                </span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- GÜNLÜK SORU HEDEFİ -->
+<div class="col-md-6 mb-3">
+    <div class="card p-3 h-100 shadow-sm">
+        <h5 class="card-title">📝 Dinamik Soru Hedefi</h5>
+
+        <!-- BUGÜNKÜ DURUM -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-primary p-2">
+                    <i class="bi bi-calendar-day"></i> Bugün
+                </span>
+                <h4 class="mb-0">
+                    {{ bugun_soru }}/{{ gunluk_hedef }}
+                </h4>
+            </div>
+
+            <!-- İlerleme Çubuğu -->
+            <div class="progress mb-2" style="height: 25px;">
+                <div class="progress-bar
+                    {% if soru_yuzde >= 100 %}bg-success
+                    {% elif soru_yuzde >= 70 %}bg-warning
+                    {% else %}bg-danger{% endif %}"
+                    style="width: {{ soru_yuzde }}%">
+                    <span class="fw-bold">{{ soru_yuzde }}%</span>
+                </div>
+            </div>
+
+            <!-- Açık Bilgisi -->
+            {% if acik_soru > 0 %}
+            <div class="alert alert-warning p-2">
+                <div class="d-flex justify-content-between">
+                    <small>📌 Bugünkü Açık:</small>
+                    <span class="fw-bold text-danger">{{ acik_soru }} soru</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-success p-2">
+                <div class="d-flex justify-content-between">
+                    <small>✅ Bugünkü Açık:</small>
+                    <span class="fw-bold text-success">0 soru</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+<!-- GÜNLÜK SORU HEDEFİ kartından SONRA bu yeni kartı ekleyin: -->
+<!-- YENİ SATIR: UZUN VADELİ HEDEFLER -->
+<div class="row mb-4">
+    <!-- UZUN VADELİ SORU HEDEFLERİ -->
+    <div class="col-md-12 mb-3">
+        <!-- Yukarıdaki uzun vadeli hedefler kartını buraya koyun -->
+    </div>
+</div>
+<!-- UZUN VADELİ SORU HEDEFLERİ -->
+<div class="col-md-6 mb-3">
+    <div class="card p-3 h-100 shadow-sm">
+        <h5 class="card-title">🏆 Uzun Vadeli Soru Hedefleri</h5>
+
+        <!-- 10.000 SORU HEDEFİ -->
+        <div class="mb-4 p-3 border rounded">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-primary p-2">
+                    <i class="bi bi-trophy"></i> 10.000 Soru
+                </span>
+                <h4 class="mb-0">{{ toplam_soru }}/{{ hedef_10000 }}</h4>
+            </div>
+
+            <!-- İlerleme Çubuğu -->
+            <div class="progress mb-2" style="height: 20px;">
+                <div class="progress-bar bg-primary"
+                     style="width: {{ ilerleme_10000 }}%">
+                    <span class="fw-bold">{{ ilerleme_10000 }}%</span>
+                </div>
+            </div>
+
+            <!-- İstatistikler -->
+            <div class="row text-center">
+                <div class="col-6">
+                    <div class="p-2 bg-light rounded">
+                        <small>Kalan Soru</small>
+                        <h6 class="mt-1 text-danger">{{ kalan_10000 }}</h6>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2 bg-light rounded">
+                        <small>Tahmini Bitiş</small>
+                        <h6 class="mt-1 text-primary">{{ tahmini_bitis_10000 }}</h6>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detaylar -->
+            <div class="mt-2 small text-muted">
+                <div class="d-flex justify-content-between">
+                    <span>Gereken Ortalama:</span>
+                    <span>
+                        {% if tahmini_gun_10000 > 0 %}
+                            {{ (kalan_10000 / tahmini_gun_10000)|round(1) }}
+                        {% else %}
+                            0
+                        {% endif %}
+                        soru/gün
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Tahmini Süre:</span>
+                    <span>{{ tahmini_gun_10000 }} gün</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 20.000 SORU HEDEFİ -->
+        <div class="p-3 border rounded">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-success p-2">
+                    <i class="bi bi-award"></i> 20.000 Soru
+                </span>
+                <h4 class="mb-0">{{ toplam_soru }}/{{ hedef_20000 }}</h4>
+            </div>
+
+            <!-- İlerleme Çubuğu -->
+            <div class="progress mb-2" style="height: 20px;">
+                <div class="progress-bar bg-success"
+                     style="width: {{ ilerleme_20000 }}%">
+                    <span class="fw-bold">{{ ilerleme_20000 }}%</span>
+                </div>
+            </div>
+
+            <!-- İstatistikler -->
+            <div class="row text-center">
+                <div class="col-6">
+                    <div class="p-2 bg-light rounded">
+                        <small>Kalan Soru</small>
+                        <h6 class="mt-1 text-danger">{{ kalan_20000 }}</h6>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2 bg-light rounded">
+                        <small>Tahmini Bitiş</small>
+                        <h6 class="mt-1 text-success">{{ tahmini_bitis_20000 }}</h6>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detaylar -->
+            <div class="mt-2 small text-muted">
+                <div class="d-flex justify-content-between">
+                    <span>Gereken Ortalama:</span>
+                    <span>
+                        {% if tahmini_gun_20000 > 0 %}
+                            {{ (kalan_20000 / tahmini_gun_20000)|round(1) }}
+                        {% else %}
+                            0
+                        {% endif %}
+                        soru/gün
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Tahmini Süre:</span>
+                    <span>{{ tahmini_gun_20000 }} gün</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KARŞILAŞTIRMA TABLOSU -->
+        <div class="mt-4">
+            <h6>📊 Tempo Karşılaştırması</h6>
+            <table class="table table-sm table-bordered">
+                <thead>
+                    <tr>
+                        <th>Hedef</th>
+                        <th>Mevcut Ort.</th>
+                        <th>Gereken Ort.</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Günlük (100)</td>
+                        <td>{{ bugun_soru }}</td>
+                        <td>{{ gunluk_hedef }}</td>
+                        <td>
+                            {% if bugun_soru >= gunluk_hedef %}
+                                <span class="badge bg-success">✅</span>
+                            {% else %}
+                                <span class="badge bg-danger">⚠️</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>10.000</td>
+                        <td>{{ genel_gunluk_ortalama }}</td>
+                        <td>
+                            {% if tahmini_gun_10000 > 0 %}
+                                {{ (kalan_10000 / tahmini_gun_10000)|round(1) }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if genel_gunluk_ortalama >= (kalan_10000 / tahmini_gun_10000 if tahmini_gun_10000 > 0 else 0) %}
+                                <span class="badge bg-success">✅</span>
+                            {% else %}
+                                <span class="badge bg-warning">📈</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>20.000</td>
+                        <td>{{ genel_gunluk_ortalama }}</td>
+                        <td>
+                            {% if tahmini_gun_20000 > 0 %}
+                                {{ (kalan_20000 / tahmini_gun_20000)|round(1) }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if genel_gunluk_ortalama >= (kalan_20000 / tahmini_gun_20000 if tahmini_gun_20000 > 0 else 0) %}
+                                <span class="badge bg-success">✅</span>
+                            {% else %}
+                                <span class="badge bg-warning">📈</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MOTİVASYON MESAJI -->
+        <div class="mt-3 p-3 bg-info bg-opacity-10 rounded">
+            <small class="text-muted">
+                {% if ilerleme_10000 >= 100 %}
+                    🎉 10.000 soru hedefini tamamladınız! 20.000 soru hedefine odaklanın!
+                {% elif ilerleme_10000 >= 50 %}
+                    🔥 10.000 soru hedefine yaklaşıyorsunuz! Devam edin!
+                {% else %}
+                    💪 Her gün düzenli çalışarak hedeflerinize ulaşabilirsiniz!
+                {% endif %}
+            </small>
+        </div>
+    </div>
+</div>
+        <!-- YARININ HEDEFİ -->
+        <div class="mb-4 p-3 bg-info bg-opacity-10 rounded border border-info">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-info p-2">
+                    <i class="bi bi-calendar-plus"></i> Yarın
+                </span>
+                <h4 class="mb-0 text-info">{{ yarin_hedefi }} soru</h4>
+            </div>
+
+            <small class="text-muted">
+                {% if tasinan_acik > 0 %}
+                ⚠️ <strong>{{ tasinan_acik }} soru</strong> bugünden taşındı
+                {% else %}
+                ✅ Bugünden taşınan açık yok
+                {% endif %}
+            </small>
+
+            <div class="mt-2 small">
+                <span class="text-muted">Temel hedef: 100 soru</span>
+                {% if tasinan_acik > 0 %}
+                <br><span class="text-danger">+ Taşınan: {{ tasinan_acik }} soru</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- İSTATİSTİKLER -->
+        <div class="row text-center">
+            <div class="col-4">
+                <div class="p-2 border rounded">
+                    <small>Toplam</small>
+                    <h5 class="mt-1">{{ toplam_soru }}</h5>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 border rounded">
+                    <small>Ortalama</small>
+                    <h5 class="mt-1">{{ genel_gunluk_ortalama }}</h5>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 border rounded">
+                    <small>7 Gün Açık</small>
+                    <h5 class="mt-1 text-danger">{{ toplam_acik_7gun }}</h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- DURUM GÖSTERGESİ -->
+        <div class="mt-4 text-center">
+            {% if soru_durum == "iyi" %}
+                <span class="badge bg-success p-2">
+                    <i class="bi bi-trophy"></i> Hedef Tamamlandı
+                </span>
+                <p class="text-success small mt-1 mb-0">
+                    🎉 Mükemmel! Hedefi tamamladınız.
+                </p>
+            {% elif soru_durum == "orta" %}
+                <span class="badge bg-warning p-2">
+                    <i class="bi bi-lightning-charge"></i> İyi Gidiyor
+                </span>
+                <p class="text-warning small mt-1 mb-0">
+                    📈 Hedefe yaklaşıyorsunuz, devam edin!
+                </p>
+            {% else %}
+                <span class="badge bg-danger p-2">
+                    <i class="bi bi-exclamation-triangle"></i> Dikkat
+                </span>
+                <p class="text-danger small mt-1 mb-0">
+                    ⚠️ Hedefin gerisindesiniz, telafi gerekiyor.
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- MOTİVASYON MESAJI -->
+        <div class="mt-3 p-2 bg-light rounded">
+            <small class="text-muted">
+                {% if acik_soru > 0 %}
+                💪 <strong>{{ acik_soru }} soru</strong> daha çözerseniz bugünkü hedef tamamlanacak.
+                Açık yarına <strong>{{ tasinan_acik }} soru</strong> olarak eklenecek.
+                {% elif bugun_soru >= gunluk_hedef %}
+                🎉 Tebrikler! Bugünkü hedefi tamamladınız.
+                {% else %}
+                🔥 Çok az kaldı, devam edin!
+                {% endif %}
+            </small>
+        </div>
+    </div>
+</div>
+
+<h5 class="mt-4">📅 Çalışma Takvimi (Son 14 Gün)</h5>
+
+<div class="d-flex flex-wrap">
+{% for gun in son_7_gun %}
+    <li class="list-group-item">{{ gun }}</li>
+{% endfor %}
+    <div class="m-1 p-2 text-center rounded
+        {% if gun in calisilan_gunler %}
+            bg-success text-white
+        {% else %}
+            bg-danger text-white
+        {% endif %}
+        " style="width: 70px;">
+        {{ gun }}
+    </div>
+</div>
+
+
+
+<div class="card mb-4 p-3 text-center">
+    <h5>🚦 Genel Gidişat</h5>
+
+    {% if motivasyon == "iyi" %}
+        <div class="alert alert-success">🟢 Gidişat Çok İyi</div>
+    {% elif motivasyon == "orta" %}
+        <div class="alert alert-warning">🟡 Tempo Artmalı</div>
+    {% else %}
+        <div class="alert alert-danger">🔴 Riskli – Daha Fazla Çalışmalısın</div>
+    {% endif %}
+</div>
+
+<a href="/logout" class="btn btn-danger w-100 mt-3">Çıkış Yap</a>
+
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/static/service_worker.js");
+}
+</script>
+
+</body>
+</html>
