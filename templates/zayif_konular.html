@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Zayıf Konular</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .risk-high { background-color: #ffcccc !important; }
+        .risk-medium { background-color: #fff3cd !important; }
+        .risk-low { background-color: #d1ecf1 !important; }
+        .progress-thin { height: 8px; }
+        .konu-kart { transition: all 0.3s; }
+        .konu-kart:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .risk-badge { font-size: 0.7rem; padding: 2px 6px; }
+    </style>
+</head>
+<body class="container mt-4">
+
+<div class="card shadow border-0">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">🚨 Zayıf Konularım (Yanlış Oranına Göre)</h4>
+        <small class="fst-italic">En yüksek yanlış oranına sahip konularınız</small>
+    </div>
+
+    <div class="card-body">
+        {% if konular and konular[0][0] != "Henüz veri yok" %}
+
+        <!-- İSTATİSTİK ÖZET -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5 class="text-danger">{{ konular|length }}</h5>
+                        <small>Riskli Konu</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5 class="text-warning">{{ konular[0][5]|round(1) }}%</h5>
+                        <small>En Yüksek Yanlış Oranı</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5 class="text-info">
+                            {% set ort_yanlis_orani = konular|map(attribute=5)|sum / konular|length if konular|length > 0 else 0 %}
+                            {{ ort_yanlis_orani|round(1) }}%
+                        </h5>
+                        <small>Ortalama Yanlış Oranı</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5 class="text-success">
+                            {% set toplam_soru = konular|sum(attribute=3) %}
+                            {{ toplam_soru }}
+                        </h5>
+                        <small>Toplam Analiz Edilen Soru</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AÇIKLAMA -->
+        <div class="alert alert-info mb-4">
+            <h6>📊 Sıralama Mantığı:</h6>
+            <ul class="mb-0">
+                <li><strong>Öncelik: Yanlış Oranı</strong> (% olarak) - En yüksek oran en üstte</li>
+                <li><strong>Sonra: Yanlış Sayısı</strong> - Oran eşitse yüksek yanlış sayısı</li>
+                <li><strong>Filtre:</strong> En az 20 soru ve %10'dan fazla yanlış oranı</li>
+                <li><strong>Örnek:</strong> 50/200 (%25) ↔ 40/100 (%40) → %40 daha riskli!</li>
+            </ul>
+        </div>
+
+        <!-- ANA TABLO -->
+        <table class="table table-hover table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th width="4%">#</th>
+                    <th width="14%">Ders</th>
+                    <th width="22%">Konu</th>
+                    <th width="10%">Yanlış</th>
+                    <th width="10%">Doğru</th>
+                    <th width="10%">Toplam</th>
+                    <th width="15%">Yanlış Oranı</th>
+                    <th width="15%">Başarı Oranı</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for k in konular %}
+                {% set yanlis_orani = k[5] %}
+                {% set risk = "high" if yanlis_orani > 40 else "medium" if yanlis_orani > 20 else "low" %}
+
+                <tr class="risk-{{ risk }} konu-kart">
+                    <td class="fw-bold text-center">
+                        {{ loop.index }}
+                        <br>
+                        <span class="risk-badge badge
+                            {% if risk == 'high' %}bg-danger
+                            {% elif risk == 'medium' %}bg-warning
+                            {% else %}bg-info{% endif %}">
+                            {% if risk == 'high' %}YÜKSEK
+                            {% elif risk == 'medium' %}ORTA
+                            {% else %}DÜŞÜK{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary">{{ k[0] }}</span>
+                        <br>
+                        <small class="text-muted">{{ k[7] }} gün</small>
+                    </td>
+                    <td>
+                        <strong>{{ k[1] }}</strong>
+                        <br>
+                        <small class="text-muted">
+                            Ort. Net: {{ k[4] }} |
+                            Son: {{ k[6] }}
+                        </small>
+                    </td>
+                    <td class="text-center">
+                        <span class="fw-bold text-danger">{{ k[2] }}</span>
+                        <br>
+                        <small class="text-muted">Günlük: {{ k[8] }}</small>
+                    </td>
+                    <td class="text-center">
+                        <span class="fw-bold text-success">{{ k[9] }}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="text-muted">{{ k[3] }}</span>
+                    </td>
+                    <td>
+                        <!-- YANLIŞ ORANI -->
+                        <div class="mb-1">
+                            <div class="d-flex justify-content-between">
+                                <small>Yanlış:</small>
+                                <small class="fw-bold text-danger">{{ yanlis_orani }}%</small>
+                            </div>
+                            <div class="progress progress-thin">
+                                <div class="progress-bar bg-danger"
+                                     style="width: {{ yanlis_orani }}%"
+                                     title="Yanlış Oranı: %{{ yanlis_orani }}">
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <!-- BAŞARI ORANI -->
+                        <div class="mb-1">
+                            <div class="d-flex justify-content-between">
+                                <small>Doğru:</small>
+                                <small class="fw-bold text-success">
+    {% if k|length > 10 %}
+        {{ k[10] }}%
+    {% else %}
+        0%
+    {% endif %}
+</small>
+                            </div>
+                            <div class="progress progress-thin">
+                                <div class="progress-bar bg-success"
+                                     style="width: {{ k[10] }}%"
+                                     title="Başarı Oranı: %{{ k[10] }}">
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- DETAY SATIRI (isteğe bağlı) -->
+                <tr class="border-top-0">
+                    <td colspan="8" class="p-2 bg-light">
+                        <div class="row small">
+                            <div class="col-md-4">
+                                <span class="text-muted">📅 Son Çalışma:</span> {{ k[6] }}
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted">📊 Ortalama Net:</span> {{ k[4] }}
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted">🎯 Hedef:</span>
+                                {% if yanlis_orani > 40 %}
+                                    <span class="text-danger">Yüksek risk! Öncelik ver</span>
+                                {% elif yanlis_orani > 20 %}
+                                    <span class="text-warning">Orta risk, tekrar et</span>
+                                {% else %}
+                                    <span class="text-success">İyi gidiyor</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+<!-- GRAFİK bölümünü şu şekilde değiştirin: -->
+
+<!-- DERS BAZLI GRAFİK -->
+<div class="card mt-4">
+    <div class="card-header bg-primary text-white">
+        <h6 class="mb-0">📊 Ders Bazlı Performans Analizi</h6>
+        <small>Tüm derslerin genel başarı durumu</small>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <canvas id="dersBazliGrafik"></canvas>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">🏆 En İyi Performans</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if ders_bazli %}
+                            {% set en_iyi_ders = ders_bazli|sort(attribute=8, reverse=true)|first %}
+                            {% if en_iyi_ders %}
+                            <div class="text-center">
+                                <h4 class="text-success">{{ en_iyi_ders[0] }}</h4>
+                                <h2 class="text-success">{{ en_iyi_ders[8] }}%</h2>
+                                <small class="text-muted">Başarı Oranı</small>
+                                <hr>
+                                <small>
+                                    {{ en_iyi_ders[2] }} soru çözüldü<br>
+                                    {{ en_iyi_ders[3] }} doğru ({{ en_iyi_ders[1] }} yanlış)<br>
+                                    Ortalama Net: {{ en_iyi_ders[4] }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center text-muted py-3">
+                                Henüz yeterli veri yok
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DETAYLI DERS TABLOSU -->
+        {% if ders_bazli %}
+        <div class="mt-4">
+            <h6>📈 Dersler - Detaylı İstatistikler</h6>
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Ders</th>
+                        <th>Toplam Soru</th>
+                        <th>Doğru</th>
+                        <th>Yanlış</th>
+                        <th>Başarı %</th>
+                        <th>Yanlış %</th>
+                        <th>Ort. Net</th>
+                        <th>Konu Sayısı</th>
+                        <th>En Zayıf Konular</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ders in ders_bazli %}
+                    <tr>
+                        <td><strong>{{ ders[0] }}</strong></td>
+                        <td>{{ ders[2] }}</td>
+                        <td class="text-success">{{ ders[3] }}</td>
+                        <td class="text-danger">{{ ders[1] }}</td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-success" style="width: {{ ders[8] }}%">
+                                    {{ ders[8] }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-danger" style="width: {{ ders[7] }}%">
+                                    {{ ders[7] }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ ders[4] }}</td>
+                        <td>{{ ders[5] }}</td>
+                        <td>
+                            <small>
+                                {% if ders[9] %}
+                                    {% for konu in ders[9] %}
+                                        {{ konu[0] }} (%{{ konu[3] }})<br>
+                                    {% endfor %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- KONU BAZLI GRAFİK (ESKİ) - İsterseniz kaldırabilirsiniz veya küçültebilirsiniz -->
+<div class="card mt-4">
+    <div class="card-header bg-warning">
+        <h6 class="mb-0">📋 En Yüksek Yanlış Oranına Sahip Konular (Top 10)</h6>
+    </div>
+    <div class="card-body">
+        <canvas id="yanlisOraniGrafik" height="100"></canvas>
+    </div>
+</div>
+
+        <!-- RİSK ANALİZİ -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="mb-0">⚠️ Yüksek Riskli Konular (%40+ Yanlış)</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for k in konular if k[5] > 40 %}
+                            <li class="list-group-item">
+                                <strong>{{ k[0] }} - {{ k[1] }}</strong>
+                                <br>
+                                <small>{{ k[3] }} soruda {{ k[2] }} yanlış (%{{ k[5] }})</small>
+                            </li>
+                            {% else %}
+                            <li class="list-group-item text-success">
+                                ✅ Yüksek riskli konu bulunmuyor
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h6 class="mb-0">📈 Orta Riskli Konular (%20-40 Yanlış)</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for k in konular if k[5] >= 20 and k[5] <= 40 %}
+                            <li class="list-group-item">
+                                <strong>{{ k[0] }} - {{ k[1] }}</strong>
+                                <br>
+                                <small>{{ k[3] }} soruda {{ k[2] }} yanlış (%{{ k[5] }})</small>
+                            </li>
+                            {% else %}
+                            <li class="list-group-item text-success">
+                                ✅ Orta riskli konu bulunmuyor
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÖNERİLER -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">💡 Çalışma Önerileri</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>🎯 Yüksek Riskli (%40+):</h6>
+                        <ul>
+                            <li>Konu tekrarı yapın</li>
+                            <li>Günde 30 dakika ayırın</li>
+                            <li>Temel kavramları gözden geçirin</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>📈 Orta Riskli (%20-40):</h6>
+                        <ul>
+                            <li>Haftada 2 kez tekrar</li>
+                            <li>Eksiklerinizi belirleyin</li>
+                            <li>Bol soru çözün</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>✅ Düşük Riskli (%0-20):</h6>
+                        <ul>
+                            <li>Arada tekrar yapın</li>
+                            <li>Zaman ayırmaya devam edin</li>
+                            <li>Pekiştirme testleri çözün</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- VERİ YOKSA -->
+        <div class="text-center py-5">
+            <div class="display-1 mb-3 text-muted">📊</div>
+            <h4 class="text-muted mb-3">Henüz zayıf konu tespit edilemedi</h4>
+            <p class="mb-4">Zayıf konularınızı görebilmek için:</p>
+
+            <div class="alert alert-info">
+                <h6>📋 Koşullar:</h6>
+                <ul class="mb-0">
+                    <li>En az 20 soru çözülmüş olmalı</li>
+                    <li>En az %10 yanlış oranı olmalı</li>
+                    <li>Konu bilgisi girilmiş olmalı</li>
+                </ul>
+            </div>
+
+            <a href="/soru" class="btn btn-primary btn-lg mt-4">
+                📝 Soru Çözümü Ekle
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<!-- DERS BAZLI KARŞILAŞTIRMA KARTLARI -->
+<div class="row mt-4">
+    {% for ders in ders_bazli %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 border-{{ 'success' if ders[8] >= 70 else 'warning' if ders[8] >= 50 else 'danger' }}">
+            <div class="card-header bg-{{ 'success' if ders[8] >= 70 else 'warning' if ders[8] >= 50 else 'danger' }} text-white">
+                <h6 class="mb-0">{{ ders[0] }}</h6>
+                <small>Başarı: %{{ ders[8] }} | Yanlış: %{{ ders[7] }}</small>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-6 fw-bold text-{{ 'success' if ders[8] >= 70 else 'warning' if ders[8] >= 50 else 'danger' }}">
+                        %{{ ders[8] }}
+                    </div>
+                    <small class="text-muted">Genel Başarı</small>
+                </div>
+
+                <div class="row text-center">
+                    <div class="col-6">
+                        <small>Soru</small>
+                        <h6>{{ ders[2] }}</h6>
+                    </div>
+                    <div class="col-6">
+                        <small>Doğru</small>
+                        <h6 class="text-success">{{ ders[3] }}</h6>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <small class="text-muted">En Zayıf Konular:</small>
+                    <ul class="mb-0 small">
+                        {% if ders[9] %}
+                            {% for konu in ders[9] %}
+                            <li>{{ konu[0] }} (%{{ konu[3] }})</li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="text-muted">Henüz veri yok</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <small class="text-muted">
+                    {% if ders[8] >= 70 %}
+                        🎉 Mükemmel performans!
+                    {% elif ders[8] >= 50 %}
+                        👍 İyi gidiyor
+                    {% else %}
+                        💪 Daha fazla çalışmalısın
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<a href="/dashboard" class="btn btn-secondary w-100 mt-3">
+    ← Dashboard'a Geri Dön
+</a>
+
+{% if ders_bazli %}
+<script>
+// DERS BAZLI GRAFİK - Ana Grafik
+const dersCtx = document.getElementById('dersBazliGrafik').getContext('2d');
+
+// Ders verilerini hazırla
+const dersLabels = [];
+const basariOranlari = [];
+const yanlisOranlari = [];
+const soruSayilari = [];
+const barColors = [];
+
+{% for ders in ders_bazli %}
+dersLabels.push("{{ ders[0] }}");
+basariOranlari.push({{ ders[8] }});  // Başarı oranı
+yanlisOranlari.push({{ ders[7] }});  // Yanlış oranı
+soruSayilari.push({{ ders[2] }});    // Toplam soru
+
+// Renk belirle: Başarı oranına göre
+{% if ders[8] >= 70 %}
+barColors.push('#28a745');  // Yeşil - İyi
+{% elif ders[8] >= 50 %}
+barColors.push('#ffc107');  // Sarı - Orta
+{% else %}
+barColors.push('#dc3545');  // Kırmızı - Zayıf
+{% endif %}
+{% endfor %}
+
+new Chart(dersCtx, {
+    type: 'bar',
+    data: {
+        labels: dersLabels,
+        datasets: [
+            {
+                label: 'Başarı Oranı %',
+                data: basariOranlari,
+                backgroundColor: barColors,
+                borderWidth: 1,
+                yAxisID: 'y'
+            },
+            {
+                label: 'Çözülen Soru',
+                data: soruSayilari,
+                backgroundColor: '#6c757d',
+                borderWidth: 1,
+                yAxisID: 'y1',
+                type: 'line',
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Ders Bazlı Performans Analizi'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const dersIndex = context.dataIndex;
+                        const ders = dersLabels[dersIndex];
+                        const basari = basariOranlari[dersIndex];
+                        const yanlis = yanlisOranlari[dersIndex];
+                        const soru = soruSayilari[dersIndex];
+
+                        if (context.dataset.label === 'Başarı Oranı %') {
+                            return [
+                                `${ders}`,
+                                `Başarı: %${basari}`,
+                                `Yanlış: %${yanlis}`,
+                                `Toplam: ${soru} soru`
+                            ];
+                        } else {
+                            return `Çözülen Soru: ${soru}`;
+                        }
+                    }
+                }
+            },
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Başarı Oranı %'
+                },
+                min: 0,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'Çözülen Soru Sayısı'
+                },
+                grid: {
+                    drawOnChartArea: false,
+                },
+            }
+        }
+    }
+});
+
+// KONU BAZLI GRAFİK (İkincil) - Eski grafik, isteğe bağlı
+{% if konular and konular[0][0] != "Henüz veri yok" %}
+const konuCtx = document.getElementById('yanlisOraniGrafik').getContext('2d');
+const konuLabels = [];
+const konuYanlisOranlari = [];
+
+{% for k in konular[:10] %}
+konuLabels.push("{{ k[1][:15] }}{{ '...' if k[1]|length > 15 else '' }}");
+konuYanlisOranlari.push({{ k[5] }});
+{% endfor %}
+
+new Chart(konuCtx, {
+    type: 'bar',
+    data: {
+        labels: konuLabels,
+        datasets: [{
+            label: 'Yanlış Oranı %',
+            data: konuYanlisOranlari,
+            backgroundColor: konuYanlisOranlari.map(orani =>
+                orani > 40 ? '#dc3545' :
+                orani > 20 ? '#ffc107' : '#17a2b8'
+            ),
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'En Yüksek Yanlış Oranlı Konular'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) {
+                        return value + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endif %}
+
+</body>
+</html>

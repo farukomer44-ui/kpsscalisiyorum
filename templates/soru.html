@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Soru Takibi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="container mt-4">
+
+<h4>📝 Soru Çözüm Takibi</h4>
+<hr>
+
+<form method="post" class="card p-3 mb-4">
+    <select name="ders" class="form-select mb-2" required>
+        <option value="">Ders Seç</option>
+        <option>Matematik</option>
+        <option>Türkçe</option>
+        <option>Coğrafya</option>
+        <option>Tarih</option>
+        <option>Vatandaşlık</option>
+    </select>
+
+    <!-- KONU ALANI (zorunlu değil) -->
+    <input type="text"
+           name="konu"
+           class="form-control mb-2"
+           placeholder="Konu (örn: Problemler, Paragraf - İsteğe bağlı)">
+
+    <input type="number" name="dogru" class="form-control mb-2" placeholder="Doğru Sayısı" min="0" required>
+    <input type="number" name="yanlis" class="form-control mb-2" placeholder="Yanlış Sayısı" min="0" required>
+
+    <button class="btn btn-success w-100">Kaydet</button>
+</form>
+
+<!-- soru.html dosyasına ekleyin (formdan sonra, tablodan önce): -->
+{% if zayif_konular %}
+<div class="card mb-4 border-warning">
+    <div class="card-header bg-warning text-dark">
+        <h6 class="mb-0">⚠️ Zayıf Konular Önizleme</h6>
+    </div>
+    <div class="card-body p-2">
+        <div class="row">
+            {% for zk in zayif_konular %}
+            <div class="col-md">
+                <div class="border rounded p-2 mb-2">
+                    <small class="text-muted">{{ zk[0] }}</small><br>
+                    <strong>{{ zk[1] }}</strong><br>
+                    <span class="text-danger">{{ zk[2] }} yanlış</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <small class="text-muted">
+            <a href="/zayif_konular" class="text-decoration-none">Tüm zayıf konuları gör →</a>
+        </small>
+    </div>
+</div>
+{% endif %}
+<a href="/dashboard" class="btn btn-secondary w-100 mt-4">← Geri Dön</a>
+<h5>📋 Kayıtlar</h5>
+
+<table class="table table-bordered table-sm">
+    <thead>
+        <tr>
+            <th>Ders</th>
+            <th>Konu</th>
+            <th>Doğru</th>
+            <th>Yanlış</th>
+            <th>Net</th>
+            <th>Tarih</th>
+            <th>Sil</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in sorular %}
+        <tr>
+            <td>{{ s[1] }}</td> <!-- ders -->
+            <td>{{ s[2] if s[2] else "-" }}</td> <!-- konu -->
+            <td>{{ s[3] }}</td> <!-- dogru -->
+            <td>{{ s[4] }}</td> <!-- yanlis -->
+            <td>{{ "%.2f"|format(s[5]) }}</td> <!-- net -->
+            <td>{{ s[6] }}</td> <!-- tarih -->
+            <td>
+                <a href="/soru_sil/{{ s[0] }}"
+                   class="btn btn-sm btn-danger"
+                   onclick="return confirm('Silmek istiyor musun?')">
+                    Sil
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Grafik kısmı -->
+{% if dersler and netler %}
+<h5 class="mt-4">📊 Ders Bazlı Toplam Netler</h5>
+<canvas id="netGrafik"></canvas>
+
+<script>
+try {
+    new Chart(document.getElementById("netGrafik"), {
+        type: 'bar',
+        data: {
+            labels: {{ dersler | tojson | safe }},
+            datasets: [{
+                label: 'Toplam Net',
+                data: {{ netler | tojson | safe }},
+                backgroundColor: '#4bc0c0',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+} catch(e) {
+    console.log("Grafik hatası:", e);
+    document.getElementById("netGrafik").innerHTML =
+        '<div class="alert alert-warning">Grafik yüklenemedi</div>';
+}
+</script>
+{% endif %}
+
+
+
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Konu Anlatımı Takibi</title>
+</head>
+<body>
+
+<h2>Konu Anlatımı Girişi</h2>
+
+<form method="post">
+    <input type="text" name="ders" placeholder="Ders" required><br><br>
+    <input type="text" name="konu" placeholder="Konu" required><br><br>
+    <input type="number" name="toplam_sayfa" placeholder="Toplam Sayfa" required><br><br>
+    <input type="number" name="calisilan_sayfa" placeholder="Çalışılan Sayfa" required><br><br>
+    <button type="submit">Kaydet</button>
+</form>
+
+<hr>
+
+<h3>Girilen Konular</h3>
+
+<table border="1" cellpadding="5">
+<tr>
+    <th>Ders</th>
+    <th>Konu</th>
+    <th>Toplam</th>
+    <th>Çalışılan</th>
+</tr>
+
+{% for k in konular %}
+<tr>
+    <td>{{ d[1] }}</td> <!-- ders -->
+    <td>{{ d[2] }}</td> <!-- konu -->
+    <td>{{ d[3] }}</td> <!-- toplam sayfa -->
+    <td>{{ d[4] }}</td> <!-- çalışılan sayfa -->
+    <td>
+        <a href="/konu_sil/{{ d[0] }}"
+           onclick="return confirm('Silmek istiyor musun?')">
+           ❌
+        </a>
+    </td>
+</tr>
+{% endfor %}
+</table>
+
+<br>
+<a href="/dashboard">⬅ Dashboard</a>
+
+</body>
+</html>
